@@ -1,4 +1,4 @@
-# 🎨 color-correct
+# 🖍️ color-correct
 
 **An AI colorist skill for Claude Code** — your agent looks at your footage, diagnoses it, grades it, and shows you a before/after before rendering. Nine named looks reverse-engineered from creators with great color. ffmpeg-based, non-destructive.
 
