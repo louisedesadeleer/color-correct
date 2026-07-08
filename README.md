@@ -77,9 +77,15 @@ Grade a video with Claude as the colorist — pick a named look, see the menu, o
 /color-correct video.mp4 --like <youtube-url>        → steal a new look
 ```
 
-## Why an agent instead of a LUT?
+## LUTs + agent: who does what
 
-A LUT applies the same math everywhere. An agent **looks**: it won't grade your tweet-screenshot b-roll yellow, it protects skin over vibe, it re-measures after grading to verify the numbers moved where predicted, and when a look fights your lighting it adapts the levels instead of shipping the cast. The closed loop — look, grade, look again — is the whole product.
+**The LUTs are the deliverable. The agent is the colorist.** They're layers, not rivals:
+
+- A **LUT** is fixed math — maximum compatibility, same result everywhere. Perfect for *distributing a look* into any tool.
+- But a LUT **can't correct**: apply Golden Hour to footage with a green webcam cast and you get a beautifully graded green cast. White balance and exposure are footage-dependent by definition — no file can contain that decision.
+- The **agent** does everything a file can't: looks at *your* footage, fixes casts and exposure first, picks a look that fits the content, adapts the strength when a look fights your lighting, skips the screen-recording b-roll, and re-measures after grading to verify the numbers moved where predicted.
+
+Use the LUTs alone and you get the looks. Use the agent and you get a colorist who happens to carry LUTs in their pocket.
 
 ---
 
