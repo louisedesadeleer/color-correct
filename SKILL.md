@@ -113,6 +113,19 @@ ffmpeg -y -i src_frame.jpg -i graded_frame.jpg -filter_complex hstack sbs.jpg
 ```
 Read the side-by-side. Check in order: **skin first**, then neutrals (walls/whites), then blacks, then overall vibe. Re-measure the graded frame — did the numbers move where predicted? Show the user before the full render.
 
+### Step 3.5 — Skin gate (MANDATORY when a person is in frame)
+Eyes are the first check; this makes it mechanical:
+```bash
+python3 scripts/skincheck.py src_frame.jpg graded_frame.jpg
+```
+Detects skin pixels in the original (tightened YCbCr box + saturation bounds — the classic box false-positives on beige walls) and measures how the grade moved them:
+- **PASS** (exit 0) — hue shift < 6°, sat change < 25% → proceed
+- **SOFTEN** (exit 1) — halve the look strength, re-render the preview, re-check
+- **FAIL** (exit 2) — the grade breaks skin. Don't just soften: diagnose. Usually means WB wasn't corrected first, or the look is wrong for this footage.
+- **SKIP** — <2% skin in frame (b-roll): judge by neutrals instead.
+
+Run the gate on 2–3 frames across the runtime (lighting changes move skin too). White balance is protected by the same mechanism upstream: the Fix pass neutralizes casts *before* any look, and the gate catches it if that step was skipped — a look on top of a cast fails the hue check immediately.
+
 ### Step 4 — Render
 ```bash
 ffmpeg -y -hwaccel videotoolbox -i IN.mp4 -vf "$CHAIN,format=yuv420p" \
