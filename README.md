@@ -29,6 +29,21 @@
 
 Every look ships at **subtle strength by default** — graded footage should look *shot well*, not *filtered*.
 
+## 🧊 LUTs included — use the looks anywhere
+
+Every look also ships as a standard **.cube 3D LUT** (36³), so you can use them without an agent — in **Premiere, DaVinci Resolve, Final Cut, CapCut**, or straight ffmpeg:
+
+```
+luts/subtle/   ← the shipping strength (start here)
+luts/full/     ← full consensus strength (flat footage / "more")
+```
+
+```bash
+ffmpeg -i in.mp4 -vf "lut3d=luts/subtle/golden-hour.cube" -c:a copy out.mp4
+```
+
+LUTs are generated from the exact same chains via `scripts/gen_luts.sh` (HALD-CLUT method, verified to match within ~1/255).
+
 ## How the looks were made
 
 Not vibes — measurement. For each reference creator we sampled **~18 frames across 3 different videos** (different scenes, lighting, even climates), computed a per-frame grade fingerprint (luma percentiles, per-tonal-band color casts, saturation), and took the **median + IQR**. Tight IQR across all scenes = the actual grade; wide IQR = scenery, discarded.

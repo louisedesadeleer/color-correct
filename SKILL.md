@@ -82,6 +82,8 @@ Nine looks, each reverse-engineered from a creator whose color work we admire �
 
 **Full strength** = double every parameter's distance from neutral (temp toward the value 2× further from 6500, curve offsets ×2, colorbalance ×2, vibrance ×2, contrast 1.03 → 1.06, saturation 0.95 → 0.9).
 
+**Faster path:** every look also exists as a `.cube` LUT in `luts/{subtle,full}/` — `lut3d=luts/subtle/golden-hour.cube` applies identically to the chain (verified ~1/255). Use the chains when you need to *adapt* a look to the footage; use the LUTs for straight application or for handing to an NLE. Regenerate after editing chains: `scripts/gen_luts.sh` (uses `scripts/chain2cube.py`, HALD-CLUT method — per-pixel filters only, no spatial filters like `unsharp` in a LUT-able chain).
+
 ### Step 2c — The menu (visualise all)
 Pick the most representative frame (a talking head with skin + some background depth beats a flat wall). Render all nine looks on it + label + tile 3×3:
 ```bash
