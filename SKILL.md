@@ -1,3 +1,8 @@
+---
+name: color-correct
+description: Grade a video file with your AI agent as the colorist — it looks at frames, diagnoses casts/exposure/saturation, authors a readable ffmpeg grade, previews side-by-side, iterates, renders. Non-destructive. Nine named looks (Golden Hour, Honey, Linen, Super 8, Oat Milk, Espresso, Velvet, Popsicle, Terracotta) reverse-engineered from creators with great color, each shipped as a .cube LUT too. Use when the user says "color correct this", "/color-correct", "make this look good", "apply Oat Milk to this clip", "show me all the looks on this video", or "make my footage look like [creator]" (Steal mode via --like). ALWAYS starts by showing the menu — a 3×3 contact sheet of all nine looks on the user's own footage — before applying anything; a requested look or AI recommendation is marked on the sheet for confirmation. Steal mode fits new looks from a reference.
+---
+
 # Color Correct — AI colorist skill
 
 Grade a video file with your AI agent as the colorist: it **looks at frames**, diagnoses what's wrong, authors a grade as a readable ffmpeg filter chain, previews side-by-side, iterates, renders. Non-destructive (writes a new file), audio stream-copied.
@@ -6,14 +11,15 @@ The core idea: the agent's superpower isn't running ffmpeg filters — it's the 
 
 ## Ways to use it
 
-**1. Pick a look** — "apply Oat Milk to this clip"
-Applies one of the nine named looks below (at subtle strength by default).
+**⚠️ THE MENU COMES FIRST — ALWAYS.** Whatever the user asked for, the first thing they see is the 3×3 contact sheet of all nine looks rendered on *their* footage. Color is chosen with eyes, not words — a look name means nothing until you've seen it on your own frame. No look is applied and nothing full-renders before the user has picked from the menu.
 
-**2. See the menu** — "show me all the looks on this video"
-The agent picks a representative frame, renders all nine looks on it, and returns a labeled 3×3 contact sheet so you choose with your eyes.
+**1. "Apply Oat Milk to this clip"** → render the menu with **Oat Milk marked as the requested look**, show it, ask "this one, or did another catch your eye?" — then apply their confirmation.
 
-**3. Let AI decide** — "color correct this" / "make this look good"
-The agent diagnoses the footage (content type, casts, exposure, saturation), decides whether it needs a neutral fix, a look, or both — and *which* look fits the content — then shows you a before/after side-by-side for approval before the full render.
+**2. "Show me all the looks"** → the menu, which was happening anyway.
+
+**3. "Color correct this" / "make this look good"** → diagnose (content type, casts, exposure, saturation), do the Fix pass if needed, then render the menu **on the corrected frame** with the AI's recommendation marked and a one-line reason ("cozy desk light → Honey"). User picks; AI's pick is a default, not a decision.
+
+The only menu-free path: a pure neutral **Fix** with no look at all ("just fix the white balance") — nothing to choose from there.
 
 ## Inputs
 - Path to a video file (ask if not given).
@@ -84,20 +90,20 @@ Nine looks, each reverse-engineered from a creator whose color work we admire �
 
 **Faster path:** every look also exists as a `.cube` LUT in `luts/{subtle,full}/` — `lut3d=luts/subtle/golden-hour.cube` applies identically to the chain (verified ~1/255). Use the chains when you need to *adapt* a look to the footage; use the LUTs for straight application or for handing to an NLE. Regenerate after editing chains: `scripts/gen_luts.sh` (uses `scripts/chain2cube.py`, HALD-CLUT method — per-pixel filters only, no spatial filters like `unsharp` in a LUT-able chain).
 
-### Step 2c — The menu (visualise all)
-Pick the most representative frame (a talking head with skin + some background depth beats a flat wall). Render all nine looks on it + label + tile 3×3:
+### Step 2c — The menu (MANDATORY GATE — no look is applied before this)
+Every run that could end in a look goes through the menu. Pick the most representative frame (a talking head with skin + some background depth beats a flat wall; if a Fix pass was needed, render the menu on the **corrected** frame). Render all nine looks on it + label + tile 3×3:
 ```bash
 # per look: ffmpeg -y -i frame.jpg -vf "$CHAIN,scale=768:-2" -q:v 2 look.jpg
 # then tile with PIL/ImageMagick, label each tile with the look name
 ```
-Show the sheet; the user picks with their eyes. (Labeling via PIL is the portable path — many ffmpeg builds ship without `drawtext`.)
+Show the sheet and STOP — the user picks with their eyes before anything is applied. If the user named a look, mark it on the sheet ("you asked for Oat Milk — confirm or switch"); in auto mode, mark the AI recommendation with its one-line reason. (Labeling via PIL is the portable path — many ffmpeg builds ship without `drawtext`.)
 
-### Step 2d — AI decides (auto mode)
-The agent's decision tree:
+### Step 2d — AI recommends (auto mode — recommendation, not decision)
+The agent's decision tree, whose output is the **marked default on the menu**, never a silent application:
 1. **Footage has a cast / exposure problem** → Fix first, always.
 2. **Content is a screen recording or mixed edit** → conservative fix only, or nothing. Say why.
-3. **Talking head, clean** → pick the look whose character fits the content's energy (bright tutorial → Popsicle; cozy desk → Honey/Velvet; cinematic vlog → Golden Hour/Super 8; editorial → Oat Milk/Linen; moody tech → Espresso). Name the reasoning in one line.
-4. Always show the side-by-side before the full render.
+3. **Talking head, clean** → recommend the look whose character fits the content's energy (bright tutorial → Popsicle; cozy desk → Honey/Velvet; cinematic vlog → Golden Hour/Super 8; editorial → Oat Milk/Linen; moody tech → Espresso). Name the reasoning in one line on the menu.
+4. After the user picks from the menu: side-by-side preview, then the full render.
 
 ### Step 2e — Steal mode (fit a new look from any creator)
 A single reference frame confounds the *grade* with the *scene* (a warm cabin frame reads as a warm grade). The grade is what stays constant while scenes change:

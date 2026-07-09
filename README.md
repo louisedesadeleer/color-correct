@@ -6,9 +6,10 @@
 
 ## What it does
 
-- **Pick a look** — *"apply Oat Milk to this clip"*
-- **See the menu** — *"show me all the looks on this video"* → labeled 3×3 contact sheet on your own footage
-- **Let AI decide** — *"make this look good"* → it diagnoses (talking head vs b-roll vs screen recording), fixes casts/exposure first, picks a fitting look, and shows a side-by-side before committing
+**Every run starts with the menu**: a labeled 3×3 contact sheet of all nine looks rendered on *your own footage* — because color is chosen with eyes, not words. Then:
+
+- **Pick a look** — *"apply Oat Milk to this clip"* → the menu appears with Oat Milk marked; confirm or switch
+- **Let AI recommend** — *"make this look good"* → it diagnoses (talking head vs b-roll vs screen recording), fixes casts/exposure first, and marks its recommendation on the menu with a one-line reason. You pick.
 - **Steal any look** — *"make my footage look like [creator]"* → consensus fingerprinting across multiple videos separates the *grade* from the *scenery*
 
 ## The nine looks
