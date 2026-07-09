@@ -1,6 +1,6 @@
 ---
 name: color-correct
-description: Grade a video file with your AI agent as the colorist — it looks at frames, diagnoses casts/exposure/saturation, authors a readable ffmpeg grade, previews side-by-side, iterates, renders. Non-destructive. Nine named looks (Golden Hour, Honey, Linen, Super 8, Oat Milk, Espresso, Velvet, Popsicle, Terracotta) reverse-engineered from creators with great color, each shipped as a .cube LUT too. Use when the user says "color correct this", "/color-correct", "make this look good", "apply Oat Milk to this clip", "show me all the looks on this video", or "make my footage look like [creator]" (Steal mode via --like). ALWAYS starts by showing the menu — a 3×3 contact sheet of all nine looks on the user's own footage — before applying anything; a requested look or AI recommendation is marked on the sheet for confirmation. Steal mode fits new looks from a reference.
+description: Grade a video file with your AI agent as the colorist — it looks at frames, diagnoses casts/exposure/saturation, authors a readable ffmpeg grade, previews side-by-side, iterates, renders. Non-destructive. Nine named looks (Golden Hour, Honey, Linen, Super 8, Oat Milk, Espresso, Velvet, Popsicle, Terracotta) reverse-engineered from creators with great color, each shipped as a .cube LUT too. Use when the user says "color correct this", "/color-correct", "make this look good", "apply Oat Milk to this clip", "show me all the looks on this video", or "make my footage look like [creator]" (Steal mode via --like). ALWAYS starts by showing the menu — a contact sheet of all nine looks on the user's own footage, each look rendered on one or two frames of the footage (two — e.g. talking head + differently-lit b-roll — whenever scenes vary, so a look that flatters one scene but wrecks another is caught) — before applying anything; a requested look or AI recommendation is marked on the sheet for confirmation. Steal mode fits new looks from a reference.
 ---
 
 # Color Correct — AI colorist skill
@@ -11,7 +11,7 @@ The core idea: the agent's superpower isn't running ffmpeg filters — it's the 
 
 ## Ways to use it
 
-**⚠️ THE MENU COMES FIRST — ALWAYS.** Whatever the user asked for, the first thing they see is the 3×3 contact sheet of all nine looks rendered on *their* footage. Color is chosen with eyes, not words — a look name means nothing until you've seen it on your own frame. No look is applied and nothing full-renders before the user has picked from the menu.
+**⚠️ THE MENU COMES FIRST — ALWAYS.** Whatever the user asked for, the first thing they see is the contact sheet of all nine looks rendered on *their* footage — **each look shown on two different frames** (a talking head + a b-roll / differently-lit scene), because a look that flatters one scene can wreck another. Color is chosen with eyes, not words — a look name means nothing until you've seen it on your own frames. No look is applied and nothing full-renders before the user has picked from the menu.
 
 **1. "Apply Oat Milk to this clip"** → render the menu with **Oat Milk marked as the requested look**, show it, ask "this one, or did another catch your eye?" — then apply their confirmation.
 
@@ -91,10 +91,12 @@ Nine looks, each reverse-engineered from a creator whose color work we admire �
 **Faster path:** every look also exists as a `.cube` LUT in `luts/{subtle,full}/` — `lut3d=luts/subtle/golden-hour.cube` applies identically to the chain (verified ~1/255). Use the chains when you need to *adapt* a look to the footage; use the LUTs for straight application or for handing to an NLE. Regenerate after editing chains: `scripts/gen_luts.sh` (uses `scripts/chain2cube.py`, HALD-CLUT method — per-pixel filters only, no spatial filters like `unsharp` in a LUT-able chain).
 
 ### Step 2c — The menu (MANDATORY GATE — no look is applied before this)
-Every run that could end in a look goes through the menu. Pick the most representative frame (a talking head with skin + some background depth beats a flat wall; if a Fix pass was needed, render the menu on the **corrected** frame). Render all nine looks on it + label + tile 3×3:
+Every run that could end in a look goes through the menu, built on **one or two frames**: **two whenever the footage has more than one scene or lighting situation** (the default for real videos) — a single frame lies: a look that flatters a warm talking-head face can yellow a white-walled b-roll or a screen/UI shot. One frame is acceptable only for visually uniform footage (a single static talking-head setup). Pick **two frames that differ in content or lighting** (e.g. a talking head with skin + a b-roll / differently-lit scene; for a mixed edit, deliberately pick the two that stress the grade most — the warm A-roll and the white-walled/UI b-roll). If a Fix pass was needed, render the menu on the **corrected** frames.
+
+For each look, render it on **both** frames, stack the two into one vertical tile, label the tile **once**, then tile the look-tiles into a grid (include an `Original` tile and, when a Fix is in play, a `Neutral fix` tile):
 ```bash
-# per look: ffmpeg -y -i frame.jpg -vf "$CHAIN,scale=768:-2" -q:v 2 look.jpg
-# then tile with PIL/ImageMagick, label each tile with the look name
+# per look, per frame: ffmpeg -y -i frameN.jpg -vf "$CHAIN,scale=900:-2" -q:v 2 lookN.jpg
+# vstack the two graded frames into one tile, label once (PIL), then grid the look-tiles
 ```
 Show the sheet and STOP — the user picks with their eyes before anything is applied. If the user named a look, mark it on the sheet ("you asked for Oat Milk — confirm or switch"); in auto mode, mark the AI recommendation with its one-line reason. (Labeling via PIL is the portable path — many ffmpeg builds ship without `drawtext`.)
 
@@ -113,11 +115,13 @@ A single reference frame confounds the *grade* with the *scene* (a warm cabin fr
 4. Verify side-by-side on the target footage, 2–3 iterations. Save the fitted look at subtle strength.
 
 ### Step 3 — Preview (never full-render first)
+Confirm the chosen grade on **two different frames** (the same two the menu used, or another content/lighting pair) — a grade that holds on one scene can break on another:
 ```bash
 ffmpeg -y -ss T -t 5 -i IN.mp4 -vf "$CHAIN" -c:v libx264 -crf 18 preview.mp4
-ffmpeg -y -i src_frame.jpg -i graded_frame.jpg -filter_complex hstack sbs.jpg
+# per frame: ffmpeg -y -i src_frameN.jpg -i graded_frameN.jpg -filter_complex hstack sbs_N.jpg
+# then stack sbs_1 over sbs_2 into one before/after image spanning both frames
 ```
-Read the side-by-side. Check in order: **skin first**, then neutrals (walls/whites), then blacks, then overall vibe. Re-measure the graded frame — did the numbers move where predicted? Show the user before the full render.
+Read the side-by-side. Check in order: **skin first**, then neutrals (walls/whites), then blacks, then overall vibe. Re-measure the graded frames — did the numbers move where predicted? Show the user (both frames) before the full render.
 
 ### Step 3.5 — Skin gate (MANDATORY when a person is in frame)
 Eyes are the first check; this makes it mechanical:
